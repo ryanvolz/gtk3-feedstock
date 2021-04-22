@@ -48,7 +48,10 @@ if [[ "$CONDA_BUILD_CROSS_COMPILATION" == "1" ]]; then
     unset CPPFLAGS
     export host_alias=$build_alias
 
-    meson setup native-build \
+    # Use absolute paths for build and source dirs as workaround so meson
+    # provides absolute paths to the linker
+    # (see https://github.com/conda-forge/meson-feedstock/issues/47)
+    meson setup $SRC_DIR/native-build $SRC_DIR \
         "${meson_config_args[@]}" \
         --buildtype=release \
         --prefix=$BUILD_PREFIX \
