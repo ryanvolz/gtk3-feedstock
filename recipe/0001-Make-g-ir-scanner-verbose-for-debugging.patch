@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ryan Volz <ryan.volz@gmail.com>
+Date: Fri, 23 Apr 2021 12:53:03 -0400
+Subject: [PATCH] Make g-ir-scanner verbose for debugging.
+
+---
+ gdk/meson.build | 2 +-
+ gtk/meson.build | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gdk/meson.build b/gdk/meson.build
+index 4bb1bf2..78e7433 100644
+--- a/gdk/meson.build
++++ b/gdk/meson.build
+@@ -304,7 +304,7 @@ libgdk = library('gdk-3',
+ gdk_dep_sources = [gdkconfig, gdkenum_h]
+ # Introspection
+ if build_gir
+-  gir_args = ['--quiet']
++  gir_args = ['--verbose']
+ 
+   # We may build some of the dependencies as sub-projects; this means
+   # that we need to depend on the built introspection data, instead of
+diff --git a/gtk/meson.build b/gtk/meson.build
+index 43a6e2b..6b21953 100644
+--- a/gtk/meson.build
++++ b/gtk/meson.build
+@@ -986,7 +986,7 @@ libgtk = library('gtk-3',
+ 
+ # Introspection
+ if build_gir
+-  gir_args = ['--quiet']
++  gir_args = ['--verbose']
+ 
+   gtk_introspection_sources = [
+     gtk_gir_public_headers,
+-- 
+2.30.2
+
