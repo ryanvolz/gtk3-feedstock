@@ -31,6 +31,11 @@ fi
 # ensure that the post install script is ignored
 export DESTDIR="/"
 
+export GI_SCANNER_DEBUG="save-temps"
+export DYLD_PRINT_LIBRARIES=1
+export DYLD_PRINT_RPATHS=1
+export DYLD_PRINT_TO_FILE=dyld.log
+
 if [[ "$CONDA_BUILD_CROSS_COMPILATION" == "1" ]]; then
   unset _CONDA_PYTHON_SYSCONFIGDATA_NAME
   (
@@ -47,8 +52,6 @@ if [[ "$CONDA_BUILD_CROSS_COMPILATION" == "1" ]]; then
     unset CFLAGS
     unset CPPFLAGS
     export host_alias=$build_alias
-
-    export GI_SCANNER_DEBUG="save-temps"
 
     meson setup native-build \
         "${meson_config_args[@]}" \
@@ -79,4 +82,5 @@ meson setup forgebuild \
 # print full meson configuration
 meson configure forgebuild
 ninja -v -C forgebuild -j ${CPU_COUNT}
+exit 1
 ninja -C forgebuild install -j ${CPU_COUNT}

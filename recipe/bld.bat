@@ -33,6 +33,7 @@ if errorlevel 1 exit 1
 
 ninja -v -C forgebuild -j %CPU_COUNT%
 if errorlevel 1 exit 1
+exit 1
 
 ninja -C forgebuild install -j %CPU_COUNT%
 if errorlevel 1 exit 1
