@@ -48,6 +48,8 @@ if [[ "$CONDA_BUILD_CROSS_COMPILATION" == "1" ]]; then
     unset CPPFLAGS
     export host_alias=$build_alias
 
+    export GI_SCANNER_DEBUG="save-temps"
+
     meson setup native-build \
         "${meson_config_args[@]}" \
         --buildtype=release \
