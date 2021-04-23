@@ -35,10 +35,22 @@ jobs:
         echo "##vso[task.setVariable variable=ARTIFACT_NAME]$artifact_name"
         if [ -d /Users/runner/miniforge3/conda-bld/ ]; then
           echo "##vso[task.setVariable variable=CONDA_BLD_DIR_EXISTS]true"
+          rm -rf /Users/runner/miniforge3/conda-bld/src_cache
         fi
     displayName: Check for conda build artifacts
     condition: succeededOrFailed()
 
-  - publish: /Users/runner/miniforge3/conda-bld/
-    artifact: $(ARTIFACT_NAME)
+  - task: ArchiveFiles@2
     condition: eq(variables.CONDA_BLD_DIR_EXISTS, 'true')
+    inputs:
+      rootFolderorFile: /Users/runner/miniforge3/conda-bld/
+      includeRootFolder: false
+      archiveType: zip
+      archiveFile: $(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME).zip
+      replaceExistingArchive: true
+
+  - task: PublishPipelineArtifact@1
+    condition: eq(variables.CONDA_BLD_DIR_EXISTS, 'true')
+    inputs:
+      targetPath: $(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME).zip
+      artifactName: $(ARTIFACT_NAME)
