@@ -93,33 +93,41 @@ jobs:
         PYTHONUNBUFFERED: 1
       condition: not(contains(variables['CONFIG'], 'vs2008'))
     - script: |
-        set artifact_name=conda_artifacts_$(build.BuildID)_$(CONFIG)
-        if not "%artifact_name%" == "%artifact_name:~0,80%" (
-          set artifact_name=conda_artifacts_$(build.BuildID)_$(SHORT_CONFIG)
-        )
-        echo ##vso[task.setVariable variable=ARTIFACT_NAME]%artifact_name%
-        if exist $(CONDA_BLD_PATH)\\ (
-          echo ##vso[task.setVariable variable=CONDA_BLD_DIR_EXISTS]true
-          if exist $(CONDA_BLD_PATH)\\src_cache ( rmdir /s /q $(CONDA_BLD_PATH)\\src_cache )
-        )
-      displayName: Check for conda build artifacts
-      condition: succeededOrFailed()
+        setlocal EnableDelayedExpansion
 
-    - task: ArchiveFiles@2
-      displayName: Make archive of conda build artifacts
-      condition: eq(variables.CONDA_BLD_DIR_EXISTS, 'true')
-      inputs:
-        rootFolderorFile: $(CONDA_BLD_PATH)/
-        includeRootFolder: false
-        archiveType: zip
-        archiveFile: $(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME).zip
-        replaceExistingArchive: true
+        set ARTIFACT_NAME=conda_artifacts_$(build.BuildNumber).$(system.JobAttempt)_$(CONFIG)
+        if not "%ARTIFACT_NAME%" == "%ARTIFACT_NAME:~0,80%" (
+          set ARTIFACT_NAME=conda_artifacts_$(build.BuildNumber).$(system.JobAttempt)_$(SHORT_CONFIG)
+        )
+        echo ##vso[task.setVariable variable=ARTIFACT_NAME]%ARTIFACT_NAME%
+        echo ARTIFACT_NAME: %ARTIFACT_NAME%
+
+        set ARTIFACT_DIR=$(CONDA_BLD_PATH)
+        if exist %ARTIFACT_DIR% (
+          if exist %ARTIFACT_DIR%\\git_cache ( rmdir /s /q %ARTIFACT_DIR%\\git_cache )
+          if exist %ARTIFACT_DIR%\\pip_cache ( rmdir /s /q %ARTIFACT_DIR%\\pip_cache )
+          if exist %ARTIFACT_DIR%\\src_cache ( rmdir /s /q %ARTIFACT_DIR%\\src_cache )
+        ) else (
+          echo ##vso[task.logissue type=error]conda-build directory does not exist
+          exit 1
+        )
+        echo ##vso[task.setVariable variable=ARTIFACT_PATH]%ARTIFACT_DIR%
+        echo ARTIFACT_DIR: %ARTIFACT_DIR%
+
+        if "%AGENT_JOBSTATUS%" == "Failed" (
+          set ARTIFACT_ZIP=$(Build.ArtifactStagingDirectory)\%ARTIFACT_NAME%.zip
+          7z a "!ARTIFACT_ZIP!" "%ARTIFACT_DIR%" '-xr!.git/' '-xr!_*_env*/' '-xr!*_cache/'
+          echo ##vso[task.setVariable variable=ARTIFACT_PATH]!ARTIFACT_ZIP!
+          echo ARTIFACT_ZIP: !ARTIFACT_ZIP!
+        )
+      displayName: Prepare conda build artifacts
+      condition: succeededOrFailed()
 
     - task: PublishPipelineArtifact@1
       displayName: Store conda build artifacts
-      condition: eq(variables.CONDA_BLD_DIR_EXISTS, 'true')
+      condition: not(eq(variables.ARTIFACT_PATH, ''))
       inputs:
-        targetPath: $(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME).zip
+        targetPath: $(ARTIFACT_PATH)
         artifactName: $(ARTIFACT_NAME)
     - script: |
         set "FEEDSTOCK_NAME=%BUILD_REPOSITORY_NAME:*/=%"
