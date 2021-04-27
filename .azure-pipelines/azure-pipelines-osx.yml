@@ -11,9 +11,11 @@ jobs:
       osx_64_:
         CONFIG: osx_64_
         UPLOAD_PACKAGES: 'True'
+        SHORT_CONFIG: osx_64_
       osx_arm64_:
         CONFIG: osx_arm64_
         UPLOAD_PACKAGES: 'True'
+        SHORT_CONFIG: osx_arm64_
   timeoutInMinutes: 360
 
   steps:
@@ -30,8 +32,10 @@ jobs:
       FEEDSTOCK_TOKEN: $(FEEDSTOCK_TOKEN)
       STAGING_BINSTAR_TOKEN: $(STAGING_BINSTAR_TOKEN)
   - script: |
-        full_artifact_name="conda_artifacts_$(build.BuildId)_$(CONFIG)"
-        artifact_name=`echo "$full_artifact_name" | head -c 80`
+        artifact_name="conda_artifacts_$(build.BuildId)_$(CONFIG)"
+        if [[ ${#artifact_name} -gt 80 ]]; then
+          artifact_name="conda_artifacts_$(build.BuildId)_$(SHORT_CONFIG)"
+        fi
         echo "##vso[task.setVariable variable=ARTIFACT_NAME]$artifact_name"
         if [ -d /Users/runner/miniforge3/conda-bld/ ]; then
           echo "##vso[task.setVariable variable=CONDA_BLD_DIR_EXISTS]true"
@@ -41,6 +45,7 @@ jobs:
     condition: succeededOrFailed()
 
   - task: ArchiveFiles@2
+    displayName: Make archive of conda build artifacts
     condition: eq(variables.CONDA_BLD_DIR_EXISTS, 'true')
     inputs:
       rootFolderorFile: /Users/runner/miniforge3/conda-bld/
@@ -50,6 +55,7 @@ jobs:
       replaceExistingArchive: true
 
   - task: PublishPipelineArtifact@1
+    displayName: Store conda build artifacts
     condition: eq(variables.CONDA_BLD_DIR_EXISTS, 'true')
     inputs:
       targetPath: $(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME).zip
