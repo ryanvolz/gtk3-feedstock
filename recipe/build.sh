@@ -82,5 +82,4 @@ meson setup forgebuild \
 # print full meson configuration
 meson configure forgebuild
 ninja -v -C forgebuild -j ${CPU_COUNT}
-exit 1
 ninja -C forgebuild install -j ${CPU_COUNT}
